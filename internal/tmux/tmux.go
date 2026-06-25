@@ -106,6 +106,13 @@ func Create(ctx context.Context, name string) error {
 	return exec.CommandContext(ctx, "tmux", "new-session", "-d", "-s", name).Run()
 }
 
+func Detach(ctx context.Context, name string) error {
+	if name == "" {
+		return errors.New("session name is required")
+	}
+	return exec.CommandContext(ctx, "tmux", "detach-client", "-s", name).Run()
+}
+
 func AttachCommand(ctx context.Context, name string) *exec.Cmd {
 	return exec.CommandContext(ctx, "tmux", "attach-session", "-t", name)
 }
