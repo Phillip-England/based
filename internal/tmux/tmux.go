@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -114,5 +115,18 @@ func Detach(ctx context.Context, name string) error {
 }
 
 func AttachCommand(ctx context.Context, name string) *exec.Cmd {
-	return exec.CommandContext(ctx, "tmux", "attach-session", "-t", name)
+	cmd := exec.CommandContext(ctx, "tmux", "attach-session", "-t", name)
+	cmd.Env = terminalEnv(os.Environ())
+	return cmd
+}
+
+func terminalEnv(env []string) []string {
+	out := make([]string, 0, len(env)+2)
+	for _, entry := range env {
+		if strings.HasPrefix(entry, "TERM=") || strings.HasPrefix(entry, "COLORTERM=") {
+			continue
+		}
+		out = append(out, entry)
+	}
+	return append(out, "TERM=xterm-256color", "COLORTERM=truecolor")
 }

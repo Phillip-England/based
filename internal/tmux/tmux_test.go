@@ -1,6 +1,9 @@
 package tmux
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestIsNoServerOutput(t *testing.T) {
 	tests := []struct {
@@ -31,5 +34,35 @@ func TestIsNoServerOutput(t *testing.T) {
 				t.Fatalf("isNoServerOutput(%q) = %v, want %v", tt.output, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestTerminalEnvUsesBrowserCompatibleTerminal(t *testing.T) {
+	got := terminalEnv([]string{
+		"PATH=/usr/bin",
+		"TERM=dumb",
+		"COLORTERM=old",
+		"HOME=/tmp/based",
+	})
+
+	if joined := "\n" + strings.Join(got, "\n") + "\n"; strings.Contains(joined, "\nTERM=dumb\n") {
+		t.Fatalf("terminalEnv kept unsupported TERM: %q", got)
+	}
+
+	want := map[string]bool{
+		"PATH=/usr/bin":       false,
+		"HOME=/tmp/based":     false,
+		"TERM=xterm-256color": false,
+		"COLORTERM=truecolor": false,
+	}
+	for _, entry := range got {
+		if _, ok := want[entry]; ok {
+			want[entry] = true
+		}
+	}
+	for entry, found := range want {
+		if !found {
+			t.Fatalf("terminalEnv missing %s in %q", entry, got)
+		}
 	}
 }
